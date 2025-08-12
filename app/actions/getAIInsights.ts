@@ -3,6 +3,7 @@
 import { checkUser } from '@/lib/checkUser';
 import { db } from '@/lib/db';
 import { generateExpenseInsights, AIInsight, ExpenseRecord } from '@/lib/ai';
+import type { Record as DbRecord } from '@prisma/client';
 
 export async function getAIInsights(): Promise<AIInsight[]> {
   try {
@@ -15,7 +16,7 @@ export async function getAIInsights(): Promise<AIInsight[]> {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const expenses = await db.record.findMany({
+    const expenses: DbRecord[] = await db.record.findMany({
       where: {
         userId: user.clerkUserId,
         createdAt: {
@@ -53,10 +54,10 @@ export async function getAIInsights(): Promise<AIInsight[]> {
     }
 
     // Convert to format expected by AI
-    const expenseData: ExpenseRecord[] = expenses.map((expense: { id: any; amount: any; category: any; text: any; createdAt: { toISOString: () => any; }; }) => ({
+    const expenseData: ExpenseRecord[] = expenses.map((expense) => ({
       id: expense.id,
       amount: expense.amount,
-      category: expense.category || 'Other',
+      category: expense.category ?? 'Other',
       description: expense.text,
       date: expense.createdAt.toISOString(),
     }));

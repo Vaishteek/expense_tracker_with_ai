@@ -1,6 +1,8 @@
 'use server';
+
 import { db } from '@/lib/db';
 import { auth } from '@clerk/nextjs/server';
+import type { Record as DbRecord } from '@prisma/client';
 
 async function getUserRecord(): Promise<{
   record?: number;
@@ -14,20 +16,19 @@ async function getUserRecord(): Promise<{
   }
 
   try {
-    const records = await db.record.findMany({
+    const records: DbRecord[] = await db.record.findMany({
       where: { userId },
     });
 
-    const record = records.reduce((sum: any, record: { amount: any; }) => sum + record.amount, 0);
+    // Sum all amounts
+    const record = records.reduce((sum, rec) => sum + rec.amount, 0);
 
-    // Count the number of days with valid sleep records
-    const daysWithRecords = records.filter(
-      (record: { amount: number; }) => record.amount > 0
-    ).length;
+    // Count the number of days with valid records (amount > 0)
+    const daysWithRecords = records.filter((rec) => rec.amount > 0).length;
 
     return { record, daysWithRecords };
   } catch (error) {
-    console.error('Error fetching user record:', error); // Log the error
+    console.error('Error fetching user record:', error);
     return { error: 'Database error' };
   }
 }

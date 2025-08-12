@@ -1,6 +1,8 @@
 'use server';
+
 import { db } from '@/lib/db';
 import { auth } from '@clerk/nextjs/server';
+import type { Record as DbRecord } from '@prisma/client';
 
 async function getBestWorstExpense(): Promise<{
   bestExpense?: number;
@@ -15,16 +17,16 @@ async function getBestWorstExpense(): Promise<{
 
   try {
     // Fetch all records for the authenticated user
-    const records = await db.record.findMany({
+    const records: Pick<DbRecord, 'amount'>[] = await db.record.findMany({
       where: { userId },
       select: { amount: true }, // Fetch only the `amount` field for efficiency
     });
 
-    if (!records || records.length === 0) {
+    if (records.length === 0) {
       return { bestExpense: 0, worstExpense: 0 }; // Return 0 if no records exist
     }
 
-    const amounts = records.map((record: { amount: any; }) => record.amount);
+    const amounts = records.map((record) => record.amount);
 
     // Calculate best and worst expense amounts
     const bestExpense = Math.max(...amounts); // Highest amount
@@ -32,7 +34,7 @@ async function getBestWorstExpense(): Promise<{
 
     return { bestExpense, worstExpense };
   } catch (error) {
-    console.error('Error fetching expense amounts:', error); // Log the error
+    console.error('Error fetching expense amounts:', error);
     return { error: 'Database error' };
   }
 }
